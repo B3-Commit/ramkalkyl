@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ramkalkyl B3Commit 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Work Sans', sans-serif; background: #fafafa; color: #2d2d2d; -webkit-font-smoothing: antialiased; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useMemo, useCallback } = React;
+
+    // ─── Tax table: [bruttolön, skatt] skattetabell 35, Örebro, Svenska Kyrkan ───
+    const TAX_TABLE=[[30001,6282],[30201,6335],[30401,6389],[30601,6442],[30801,6495],[31001,6548],[31201,6602],[31401,6655],[31601,6708],[31801,6761],[32001,6815],[32201,6868],[32401,6921],[32601,6974],[32801,7028],[33001,7081],[33201,7134],[33401,7187],[33601,7240],[33801,7294],[34001,7347],[34201,7400],[34401,7454],[34601,7507],[34801,7560],[35001,7613],[35201,7666],[35401,7720],[35601,7773],[35801,7826],[36001,7879],[36201,7933],[36401,7986],[36601,8039],[36801,8092],[37001,8146],[37201,8199],[37401,8252],[37601,8305],[37801,8359],[38001,8412],[38201,8465],[38401,8518],[38601,8572],[38801,8625],[39001,8678],[39201,8731],[39401,8784],[39601,8837],[39801,8903],[40001,8973],[40201,9043],[40401,9113],[40601,9183],[40801,9253],[41001,9323],[41201,9393],[41401,9463],[41601,9533],[41801,9603],[42001,9673],[42201,9743],[42401,9813],[42601,9883],[42801,9953],[43001,10023],[43201,10093],[43401,10163],[43601,10233],[43801,10303],[44001,10373],[44201,10443],[44401,10513],[44601,10583],[44801,10653],[45001,10723],[45201,10793],[45401,10863],[45601,10933],[45801,11003],[46001,11073],[46201,11143],[46401,11213],[46601,11283],[46801,11353],[47001,11423],[47201,11493],[47401,11563],[47601,11633],[47801,11703],[48001,11773],[48201,11843],[48401,11913],[48601,11983],[48801,12053],[49001,12123],[49201,12193],[49401,12263],[49601,12333],[49801,12403],[50001,12473],[50201,12543],[50401,12613],[50601,12683],[50801,12753],[51001,12823],[51201,12893],[51401,12963],[51601,13033],[51801,13103],[52001,13173],[52201,13243],[52401,13313],[52601,13383],[52801,13453],[53001,13523],[53201,13593],[53401,13663],[53601,13733],[53801,13803],[54001,13873],[54201,13943],[54401,14013],[54601,14083],[54801,14153],[55001,14256],[55201,14366],[55401,14476],[55601,14586],[55801,14696],[56001,14806],[56201,14916],[56401,15026],[56601,15136],[56801,15246],[57001,15356],[57201,15466],[57401,15576],[57601,15686],[57801,15796],[58001,15906],[58201,16016],[58401,16126],[58601,16236],[58801,16346],[59001,16456],[59201,16566],[59401,16676],[59601,16786],[59801,16896],[60001,17006],[60201,17116],[60401,17226],[60601,17336],[60801,17446],[61001,17556],[61201,17666],[61401,17776],[61601,17886],[61801,17996],[62001,18106],[62201,18216],[62401,18326],[62601,18436],[62801,18546],[63001,18656],[63201,18766],[63401,18876],[63601,18986],[63801,19096],[64001,19206],[64201,19316],[64401,19426],[64601,19536],[64801,19646],[65001,19756],[65201,19866],[65401,19976],[65601,20086],[65801,20196],[66001,20306],[66201,20416],[66401,20526],[66601,20636],[66801,20746],[67001,20856],[67201,20966],[67401,21076],[67601,21186],[67801,21296],[68001,21406],[68201,21516],[68401,21626],[68601,21736],[68801,21846],[69001,21956],[69201,22066],[69401,22176],[69601,22286],[69801,22396],[70001,22506],[70201,22616],[70401,22726],[70601,22836],[70801,22946],[71001,23056],[71201,23166],[71401,23276],[71601,23386],[71801,23496],[72001,23606],[72201,23716],[72401,23826],[72601,23936],[72801,24046],[73001,24156],[73201,24266],[73401,24376],[73601,24486],[73801,24596],[74001,24706],[74201,24816],[74401,24926],[74601,25036],[74801,25146],[75001,25256],[75201,25366],[75401,25476],[75601,25586],[75801,25696],[76001,25806],[76201,25916],[76401,26026],[76601,26136],[76801,26246],[77001,26356],[77201,26466],[77401,26576],[77601,26686],[77801,26796],[78001,26906],[78201,27016],[78401,27126],[78601,27236],[78801,27346],[79001,27456],[79201,27566],[79401,27676],[79601,27786],[79801,27896]];
+    const PBP = 52125;
+
+    function xlookup(val, la, ra) {
+      let idx = -1;
+      for (let i = 0; i < la.length; i++) { if (la[i] <= val) idx = i; else break; }
+      return idx >= 0 ? ra[idx] : 0;
+    }
+
+    function compute(inp, sd) {
+      const { fastRam, timpris, procent, timmar, buffert, bilLeasing, bilFormansv, pensionAvsattning, ovrigaKostnader, ovrigaFormaner } = inp;
+      const ba = TAX_TABLE.map(r => r[0]), sa = TAX_TABLE.map(r => r[1]);
+      const sf = sd * 0.0048, sdiv = 1 + sf;
+      return TAX_TABLE.map(([b, s], i) => {
+        const spt = s / b;
+        let sp1 = null;
+        if (i > 0) sp1 = (s - TAX_TABLE[i-1][1]) / (b - TAX_TABLE[i-1][0]);
+        const net = b - xlookup(b + bilFormansv + ovrigaFormaner, ba, sa);
+        const soc = (b + bilFormansv + ovrigaFormaner) * 0.3142;
+        const st = (b * 0.008) * (sd / 12);
+        const sem = st * 1.3142;
+        let pen = pensionAvsattning !== 0 ? pensionAvsattning : (b > PBP ? PBP * 0.045 + (b - PBP) * 0.3 : b * 0.045);
+        const slp = pen * 0.2426;
+        const ram = (buffert||0) + bilLeasing + ovrigaKostnader + b + soc + sem + pen + slp;
+        const of_ = fastRam === 0 ? 0 : fastRam - ram;
+        const or_ = timpris === 0 ? 0 : timpris * timmar * (procent / 100) - ram;
+        const sa_ = (b / sdiv) * sf;
+        const ss = (sa_ + st) * 0.3142;
+        return { b, s, spt, sp1, net, soc, sem, pen, slp, ram, of_, or_, sa_, st, ss, sum: sa_ + st + ss };
+      });
+    }
+
+    const f = (v, d = 0) => v == null ? "" : v.toLocaleString("sv-SE", { minimumFractionDigits: d, maximumFractionDigits: d });
+    const fp = (v, d = 1) => v == null ? "" : (v * 100).toLocaleString("sv-SE", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+
+    const B3 = {
+      turquoise: "#0CCCCC", pink: "#DF668A",
+      black: "#1a1a1a", darkText: "#2d2d2d", midGray: "#6b6b6b",
+      lightGray: "#e5e5e5", cardBg: "#f2f0ec", pageBg: "#fafafa",
+      white: "#ffffff", positive: "#1a8a5c", negative: "#c62828", radius: 24,
+    };
+
+    function Inp({ label, value, onChange, suffix }) {
+      return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <label style={{ fontSize: 14, color: B3.midGray, fontWeight: 400 }}>{label}</label>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="number"
+              value={value}
+              onChange={e => onChange(parseFloat(e.target.value) || 0)}
+              style={{
+                width: 120, padding: "10px 14px",
+                background: B3.white, border: `1px solid ${B3.lightGray}`,
+                borderRadius: 12, color: B3.black, fontSize: 14, fontWeight: 600,
+                textAlign: "right", outline: "none", transition: "border-color 0.2s, box-shadow 0.2s",
+                fontFamily: "'Work Sans', sans-serif",
+              }}
+              onFocus={e => { e.target.style.borderColor = B3.turquoise; e.target.style.boxShadow = "0 0 0 3px rgba(12,204,204,0.15)"; }}
+              onBlur={e => { e.target.style.borderColor = B3.lightGray; e.target.style.boxShadow = "none"; }}
+            />
+            {suffix && <span style={{ fontSize: 12, color: B3.midGray, width: 28 }}>{suffix}</span>}
+          </div>
+        </div>
+      );
+    }
+
+    function Ramkalkyl() {
+      const [tab, setTab] = useState(0);
+      const tabs = [
+        { label: "25 semesterdagar", sd: 25, fix: true },
+        { label: "30 semesterdagar", sd: 30, fix: true },
+        { label: "Valfri semester", sd: 25, fix: false },
+      ];
+      const [inp, setInp] = useState({
+        fastRam: 70000, timpris: 0, procent: 0, timmar: 0, buffert: 0,
+        bilLeasing: 0, bilFormansv: 0, pensionAvsattning: 0,
+        ovrigaKostnader: 2500, ovrigaFormaner: 0,
+      });
+      const [cs, setCs] = useState(25);
+      const sd = tabs[tab].fix ? tabs[tab].sd : cs;
+      const sp = (sd * 0.48).toFixed(1).replace(".", ",");
+      const rows = useMemo(() => compute(inp, sd), [inp, sd]);
+      const u = useCallback((k, v) => setInp(p => ({ ...p, [k]: v })), []);
+      const [hr, setHr] = useState(-1);
+
+      const cols = [
+        { l: "Bruttolön", k: "b", fn: v => f(v), st: true },
+        { l: "Skatt", k: "s", fn: v => f(v) },
+        { l: "Skatt %", k: "spt", fn: v => fp(v) },
+        { l: "Marginal", k: "sp1", fn: v => v != null ? fp(v) : "" },
+        { l: "Nettolön", k: "net", fn: v => f(v), hl: true },
+        { l: "Soc.avg", k: "soc", fn: v => f(v) },
+        { l: "Semester", k: "sem", fn: v => f(v) },
+        { l: "Pension", k: "pen", fn: v => f(v) },
+        { l: "SLP", k: "slp", fn: v => f(v) },
+        { l: "Ramkostnad", k: "ram", fn: v => f(v), bold: true },
+        { l: "Överskott fast", k: "of_", fn: v => f(v), cond: true },
+        { l: "Överskott rörlig", k: "or_", fn: v => v !== 0 ? f(v) : "0", cond: true },
+        { l: "Sem.avsättn.", k: "sa_", fn: v => f(v) },
+        { l: "Sem.tillägg", k: "st", fn: v => f(v) },
+        { l: "Soc.avg sem", k: "ss", fn: v => f(v) },
+        { l: "Summa sem", k: "sum", fn: v => f(v), bold: true },
+      ];
+
+      const grps = [
+        { l: "Privat", n: 5, c: B3.turquoise },
+        { l: "Ram", n: 7, c: B3.pink },
+        { l: "Semester " + sp + "% · " + sd + " dagar", n: 4, c: B3.turquoise },
+      ];
+
+      return (
+        <div style={{ fontFamily: "'Work Sans', sans-serif", background: B3.pageBg, color: B3.darkText, minHeight: "100vh" }}>
+
+          {/* HEADER */}
+          <header style={{
+            background: B3.white, padding: "0 48px",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            height: 72, borderBottom: "1px solid " + B3.lightGray,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <svg width="44" height="28" viewBox="0 0 44 28" fill="none">
+                <path d="M0 2C0 0.9 0.9 0 2 0H10C14.4 0 18 3.6 18 8V8C18 10.8 16.5 13.2 14.2 14.5C17 15.7 19 18.5 19 21.8V22C19 25.3 16.3 28 13 28H2C0.9 28 0 27.1 0 26V2Z" fill={B3.turquoise}/>
+                <text x="3" y="20" fontFamily="Work Sans" fontWeight="800" fontSize="18" fill="white">b</text>
+                <path d="M24 2C24 0.9 24.9 0 26 0H34C38.4 0 42 3.6 42 8C42 10.2 41 12.2 39.5 13.5C41.5 14.8 43 17.2 43 20C43 24.4 39.4 28 35 28H26C24.9 28 24 27.1 24 26V2Z" fill={B3.turquoise}/>
+                <text x="26" y="20" fontFamily="Work Sans" fontWeight="800" fontSize="18" fill="white">3</text>
+              </svg>
+              <span style={{ color: B3.midGray, fontSize: 13 }}>Sv / En / Pl</span>
+            </div>
+            <nav style={{ display: "flex", alignItems: "center", gap: 32 }}>
+              <span style={{ fontSize: 14, fontWeight: 500, color: B3.turquoise, borderTop: "3px solid " + B3.turquoise, paddingTop: 22, marginTop: -22 }}>Ramkalkyl</span>
+              <span style={{ fontSize: 14, color: B3.darkText, cursor: "pointer" }}>B3Commit</span>
+              <span style={{ fontSize: 14, color: B3.darkText, cursor: "pointer" }}>Kontakt</span>
+            </nav>
+          </header>
+
+          {/* BREADCRUMB */}
+          <div style={{ padding: "20px 48px 0", fontSize: 13, color: B3.midGray }}>
+            Start / <strong style={{ color: B3.darkText }}>Ramkalkyl</strong>
+          </div>
+
+          {/* TITLE */}
+          <section style={{ padding: "16px 48px 0" }}>
+            <div style={{ width: 32, height: 3, background: B3.turquoise, marginBottom: 16 }} />
+            <p style={{
+              display: "inline-block", fontSize: 11, fontWeight: 600,
+              textTransform: "uppercase", letterSpacing: 2.5, color: B3.darkText,
+              background: B3.cardBg, padding: "4px 10px", borderRadius: 4, marginBottom: 12,
+            }}>RAMKALKYL</p>
+            <h1 style={{ fontSize: 36, fontWeight: 700, color: B3.black, margin: "8px 0 8px", letterSpacing: -0.5, lineHeight: 1.15 }}>
+              Ramkalkyl B3Commit 2026
+            </h1>
+            <p style={{ fontSize: 15, color: B3.midGray, margin: "0 0 24px", lineHeight: 1.6 }}>
+              Skattetabell 35 · Bosatt i Örebro · Medlem i Svenska Kyrkan · {sd} dagars semester
+            </p>
+          </section>
+
+          {/* TABS */}
+          <div style={{ padding: "0 48px 24px", display: "flex", gap: 8 }}>
+            {tabs.map((t, i) => (
+              <button key={i} onClick={() => setTab(i)} style={{
+                padding: "10px 22px", border: "none", cursor: "pointer",
+                fontSize: 14, fontWeight: tab === i ? 600 : 400,
+                color: tab === i ? "#fff" : B3.darkText,
+                background: tab === i ? B3.turquoise : B3.cardBg,
+                borderRadius: B3.radius, transition: "all 0.2s",
+                fontFamily: "'Work Sans', sans-serif",
+              }}>{t.label}</button>
+            ))}
+          </div>
+
+          {/* INPUTS */}
+          <section style={{ padding: "0 48px 24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, maxWidth: 880 }}>
+              <div style={{ background: B3.cardBg, borderRadius: B3.radius, padding: "24px 28px" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: B3.darkText, marginBottom: 20 }}>Intäkter & tid</div>
+                <Inp label="Fast ramintäkt" value={inp.fastRam} onChange={v => u("fastRam", v)} suffix="kr" />
+                <Inp label="Fördelningstimpris" value={inp.timpris} onChange={v => u("timpris", v)} suffix="kr/h" />
+                <Inp label="Procentsats" value={inp.procent} onChange={v => u("procent", v)} suffix="%" />
+                <Inp label="Månadstimmar" value={inp.timmar} onChange={v => u("timmar", v)} suffix="h" />
+                <Inp label="Buffert" value={inp.buffert} onChange={v => u("buffert", v)} suffix="kr" />
+              </div>
+              <div style={{ background: B3.cardBg, borderRadius: B3.radius, padding: "24px 28px" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: B3.darkText, marginBottom: 20 }}>Kostnader & förmåner</div>
+                <Inp label="Bil leasingavgift" value={inp.bilLeasing} onChange={v => u("bilLeasing", v)} suffix="kr" />
+                <Inp label="Bil förmånsvärde" value={inp.bilFormansv} onChange={v => u("bilFormansv", v)} suffix="kr" />
+                <Inp label="Pensionsavsättning" value={inp.pensionAvsattning} onChange={v => u("pensionAvsattning", v)} suffix="kr" />
+                <Inp label="Övriga kostnader" value={inp.ovrigaKostnader} onChange={v => u("ovrigaKostnader", v)} suffix="kr" />
+                <Inp label="Övriga förmåner" value={inp.ovrigaFormaner} onChange={v => u("ovrigaFormaner", v)} suffix="kr" />
+                {!tabs[tab].fix && <Inp label="Semesterdagar" value={cs} onChange={v => setCs(Math.max(0, Math.min(50, v)))} suffix="dgr" />}
+              </div>
+            </div>
+          </section>
+
+          {/* INFO PILLS */}
+          <div style={{ padding: "0 48px 20px", display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {[
+              "Brytgräns pension: " + f(PBP) + " kr",
+              inp.pensionAvsattning > 0 ? "Pension: Fast " + f(inp.pensionAvsattning) + " kr" : "Pension: ITP1 (4,5% / 30%)",
+              "Sociala avgifter: 31,42%",
+              "Semester: " + sd + " dagar (" + sp + "%)",
+            ].map((txt, i) => (
+              <span key={i} style={{
+                fontSize: 13, color: B3.darkText, fontWeight: 500,
+                background: B3.cardBg, padding: "8px 16px", borderRadius: B3.radius,
+              }}>{txt}</span>
+            ))}
+          </div>
+
+          {/* TABLE */}
+          <div style={{
+            margin: "0 24px 48px", background: B3.white, borderRadius: B3.radius,
+            border: "1px solid " + B3.lightGray, overflow: "hidden",
+          }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1400 }}>
+                <thead>
+                  <tr>
+                    {grps.map((g, gi) => (
+                      <th key={gi} colSpan={g.n} style={{
+                        padding: "14px 14px", textAlign: "left",
+                        fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+                        letterSpacing: 1, color: "#fff", background: g.c,
+                        borderRight: gi < grps.length - 1 ? "2px solid rgba(255,255,255,0.3)" : "none",
+                      }}>{g.l}</th>
+                    ))}
+                  </tr>
+                  <tr>
+                    {cols.map((h, i) => (
+                      <th key={i} style={{
+                        padding: "10px 10px", textAlign: h.st ? "left" : "right",
+                        fontSize: 11, fontWeight: 600, color: B3.midGray,
+                        textTransform: "uppercase", letterSpacing: 0.3,
+                        borderBottom: "2px solid " + B3.lightGray,
+                        whiteSpace: "nowrap", background: B3.white,
+                        position: h.st ? "sticky" : undefined, left: h.st ? 0 : undefined, zIndex: h.st ? 3 : undefined,
+                        borderRight: (i === 4 || i === 11) ? "2px solid " + B3.lightGray : undefined,
+                      }}>{h.l}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r, i) => {
+                    const isHover = hr === i;
+                    const bg = isHover ? "rgba(12,204,204,0.06)" : i % 2 === 0 ? B3.white : B3.pageBg;
+                    return (
+                      <tr key={i}
+                        onMouseEnter={() => setHr(i)}
+                        onMouseLeave={() => setHr(-1)}
+                        style={{ background: bg, transition: "background 0.1s" }}
+                      >
+                        {cols.map((h, ci) => {
+                          const val = r[h.k];
+                          let color = B3.midGray;
+                          if (h.cond) color = val < 0 ? B3.negative : B3.positive;
+                          if (h.hl) color = B3.positive;
+                          if (h.bold) color = B3.black;
+                          if (h.st) color = B3.black;
+                          return (
+                            <td key={ci} style={{
+                              padding: "7px 10px", textAlign: h.st ? "left" : "right",
+                              borderBottom: "1px solid " + B3.lightGray,
+                              fontSize: 13, fontVariantNumeric: "tabular-nums",
+                              fontWeight: (h.bold || h.st || h.cond) ? 600 : 400, color,
+                              position: h.st ? "sticky" : undefined, left: h.st ? 0 : undefined,
+                              zIndex: h.st ? 1 : undefined, background: "inherit",
+                              borderRight: (ci === 4 || ci === 11) ? "2px solid " + B3.lightGray : undefined,
+                            }}>{h.fn(val)}</td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* FOOTER */}
+          <footer style={{
+            background: B3.white, padding: "32px 48px",
+            borderTop: "1px solid " + B3.lightGray,
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <svg width="32" height="20" viewBox="0 0 44 28" fill="none">
+                <path d="M0 2C0 0.9 0.9 0 2 0H10C14.4 0 18 3.6 18 8V8C18 10.8 16.5 13.2 14.2 14.5C17 15.7 19 18.5 19 21.8V22C19 25.3 16.3 28 13 28H2C0.9 28 0 27.1 0 26V2Z" fill={B3.turquoise}/>
+                <text x="3" y="20" fontFamily="Work Sans" fontWeight="800" fontSize="18" fill="white">b</text>
+                <path d="M24 2C24 0.9 24.9 0 26 0H34C38.4 0 42 3.6 42 8C42 10.2 41 12.2 39.5 13.5C41.5 14.8 43 17.2 43 20C43 24.4 39.4 28 35 28H26C24.9 28 24 27.1 24 26V2Z" fill={B3.turquoise}/>
+                <text x="26" y="20" fontFamily="Work Sans" fontWeight="800" fontSize="18" fill="white">3</text>
+              </svg>
+              <span style={{ fontSize: 12, color: B3.midGray }}>B3 Consulting Group · Ramkalkyl 2026</span>
+            </div>
+            <div style={{ fontSize: 11, color: B3.midGray }}>
+              Skattetabell 35 · Örebro · Svenska Kyrkan · Alla belopp i SEK/månad
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<Ramkalkyl />);
+  </script>
+</body>
+</html>
