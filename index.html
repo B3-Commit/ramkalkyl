@@ -152,6 +152,26 @@
         { l: "Semester " + sp + "% · " + sd + " dagar", n: 4, c: B3.turquoise },
       ];
 
+      // ─── Summary metrics: find the breakeven row and max positive överskott ───
+      const summary = useMemo(() => {
+        const positiveRows = rows.filter(r => r.of_ > 0);
+        const maxOvf = positiveRows.length > 0 ? positiveRows[0] : null; // highest överskott = lowest brutto with positive
+        const lastPositive = positiveRows.length > 0 ? positiveRows[positiveRows.length - 1] : null; // max brutto med positivt överskott
+        const breakeven = lastPositive; // the row closest to 0 from above
+        return {
+          count: positiveRows.length,
+          maxBrutto: lastPositive ? lastPositive.b : null,
+          maxNetto: lastPositive ? lastPositive.net : null,
+          maxOvf: maxOvf ? maxOvf.of_ : null,
+          maxPension: lastPositive ? lastPositive.pen : null,
+          breakevenBrutto: breakeven ? breakeven.b : null,
+          breakevenOvf: breakeven ? breakeven.of_ : null,
+          minBruttoPositive: maxOvf ? maxOvf.b : null,
+        };
+      }, [rows]);
+
+      const [variant, setVariant] = useState(1);
+
       return (
         <div style={{ fontFamily: "'Work Sans', sans-serif", background: B3.pageBg, color: B3.darkText, minHeight: "100vh" }}>
 
@@ -212,9 +232,9 @@
             ))}
           </div>
 
-          {/* INPUTS */}
+          {/* INPUTS + SUMMARY */}
           <section style={{ padding: "0 48px 24px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, maxWidth: 880 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
               <div style={{ background: B3.cardBg, borderRadius: B3.radius, padding: "24px 28px" }}>
                 <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: B3.darkText, marginBottom: 20 }}>Intäkter & tid</div>
                 <Inp label="Fast ramintäkt" value={inp.fastRam} onChange={v => u("fastRam", v)} suffix="kr" />
@@ -232,6 +252,132 @@
                 <Inp label="Övriga förmåner" value={inp.ovrigaFormaner} onChange={v => u("ovrigaFormaner", v)} suffix="kr" />
                 {!tabs[tab].fix && <Inp label="Semesterdagar" value={cs} onChange={v => setCs(Math.max(0, Math.min(50, v)))} suffix="dgr" />}
               </div>
+
+              {/* ─── SUMMARY PANEL ─── */}
+              {variant === 1 ? (
+                /* VARIANT A: Compact metric cards */
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: B3.darkText, padding: "0 4px" }}>
+                    Nyckeltal
+                    <span style={{
+                      marginLeft: 8, fontSize: 10, fontWeight: 500, color: B3.midGray,
+                      textTransform: "none", letterSpacing: 0,
+                    }}>för givna indata</span>
+                  </div>
+
+                  {summary.count > 0 ? (
+                    <>
+                      <div style={{ background: B3.white, borderRadius: 16, padding: "16px 20px", border: "1px solid " + B3.lightGray }}>
+                        <div style={{ fontSize: 11, color: B3.midGray, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Max bruttolön</div>
+                        <div style={{ fontSize: 26, fontWeight: 700, color: B3.black }}>{f(summary.maxBrutto)} <span style={{ fontSize: 14, fontWeight: 400, color: B3.midGray }}>kr</span></div>
+                        <div style={{ fontSize: 12, color: B3.midGray, marginTop: 2 }}>Högsta brutto med positivt överskott</div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div style={{ background: B3.white, borderRadius: 16, padding: "14px 16px", border: "1px solid " + B3.lightGray }}>
+                          <div style={{ fontSize: 11, color: B3.midGray, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Nettolön</div>
+                          <div style={{ fontSize: 20, fontWeight: 700, color: B3.positive }}>{f(summary.maxNetto)} <span style={{ fontSize: 12, fontWeight: 400, color: B3.midGray }}>kr</span></div>
+                        </div>
+                        <div style={{ background: B3.white, borderRadius: 16, padding: "14px 16px", border: "1px solid " + B3.lightGray }}>
+                          <div style={{ fontSize: 11, color: B3.midGray, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Pension</div>
+                          <div style={{ fontSize: 20, fontWeight: 700, color: B3.darkText }}>{f(summary.maxPension)} <span style={{ fontSize: 12, fontWeight: 400, color: B3.midGray }}>kr</span></div>
+                        </div>
+                      </div>
+                      <div style={{ background: "rgba(26,138,92,0.08)", borderRadius: 16, padding: "14px 20px", border: "1px solid rgba(26,138,92,0.2)" }}>
+                        <div style={{ fontSize: 11, color: B3.positive, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Max överskott</div>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: B3.positive }}>+{f(summary.maxOvf)} <span style={{ fontSize: 13, fontWeight: 400 }}>kr</span></div>
+                        <div style={{ fontSize: 12, color: B3.midGray, marginTop: 2 }}>Vid {f(summary.minBruttoPositive)} kr brutto</div>
+                      </div>
+                      <div style={{ background: B3.white, borderRadius: 16, padding: "14px 20px", border: "1px solid " + B3.lightGray }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 13, color: B3.midGray }}>Lönenivåer med överskott</span>
+                          <span style={{ fontSize: 18, fontWeight: 700, color: B3.turquoise }}>{summary.count} <span style={{ fontSize: 12, fontWeight: 400, color: B3.midGray }}>/ {rows.length}</span></span>
+                        </div>
+                        <div style={{ marginTop: 8, height: 6, background: B3.lightGray, borderRadius: 3, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: (summary.count / rows.length * 100) + "%", background: B3.turquoise, borderRadius: 3, transition: "width 0.4s ease" }} />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ background: B3.white, borderRadius: 16, padding: "32px 20px", border: "1px solid " + B3.lightGray, textAlign: "center", flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                      <div style={{ fontSize: 32, marginBottom: 12 }}>—</div>
+                      <div style={{ fontSize: 14, color: B3.midGray }}>Inget överskott med nuvarande indata</div>
+                      <div style={{ fontSize: 12, color: B3.midGray, marginTop: 4 }}>Öka ramintäkt eller sänk kostnader</div>
+                    </div>
+                  )}
+
+                  <button onClick={() => setVariant(2)} style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: 11, color: B3.midGray, textAlign: "right", padding: "4px 0",
+                  }}>Visa variant B →</button>
+                </div>
+              ) : (
+                /* VARIANT B: Single card with horizontal key figures + gauge */
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: B3.darkText, padding: "0 4px" }}>
+                    Sammanfattning
+                    <span style={{
+                      marginLeft: 8, fontSize: 10, fontWeight: 500, color: B3.midGray,
+                      textTransform: "none", letterSpacing: 0,
+                    }}>för givna indata</span>
+                  </div>
+
+                  {summary.count > 0 ? (
+                    <div style={{ background: B3.white, borderRadius: B3.radius, padding: "24px 24px", border: "1px solid " + B3.lightGray, flex: 1 }}>
+                      {/* Gauge bar */}
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: B3.midGray, marginBottom: 6 }}>
+                          <span>{f(rows[0].b)} kr</span>
+                          <span>{f(rows[rows.length - 1].b)} kr</span>
+                        </div>
+                        <div style={{ height: 20, background: B3.lightGray, borderRadius: 10, overflow: "hidden", position: "relative" }}>
+                          <div style={{
+                            position: "absolute", left: 0, top: 0, height: "100%",
+                            width: (summary.count / rows.length * 100) + "%",
+                            background: "linear-gradient(90deg, " + B3.turquoise + ", " + B3.positive + ")",
+                            borderRadius: 10, transition: "width 0.4s ease",
+                          }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginTop: 6 }}>
+                          <span style={{ color: B3.positive, fontWeight: 600 }}>✓ Överskott</span>
+                          <span style={{ color: B3.negative, fontWeight: 500 }}>Underskott</span>
+                        </div>
+                      </div>
+
+                      {/* Key figures list */}
+                      {[
+                        { label: "Max bruttolön", value: f(summary.maxBrutto) + " kr", sub: "med positivt överskott", color: B3.black },
+                        { label: "Nettolön vid max brutto", value: f(summary.maxNetto) + " kr", sub: null, color: B3.positive },
+                        { label: "Pension vid max brutto", value: f(summary.maxPension) + " kr", sub: null, color: B3.darkText },
+                        { label: "Högsta överskott", value: "+" + f(summary.maxOvf) + " kr", sub: "vid " + f(summary.minBruttoPositive) + " kr brutto", color: B3.positive },
+                        { label: "Break-even brutto", value: f(summary.breakevenBrutto) + " kr", sub: "överskott: " + f(summary.breakevenOvf) + " kr", color: B3.turquoise },
+                      ].map((item, i) => (
+                        <div key={i} style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                          padding: "10px 0",
+                          borderBottom: i < 4 ? "1px solid " + B3.lightGray : "none",
+                        }}>
+                          <div>
+                            <div style={{ fontSize: 13, color: B3.midGray }}>{item.label}</div>
+                            {item.sub && <div style={{ fontSize: 11, color: B3.midGray, opacity: 0.7, marginTop: 1 }}>{item.sub}</div>}
+                          </div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: item.color, textAlign: "right" }}>{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ background: B3.white, borderRadius: B3.radius, padding: "32px 20px", border: "1px solid " + B3.lightGray, textAlign: "center", flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                      <div style={{ fontSize: 32, marginBottom: 12 }}>—</div>
+                      <div style={{ fontSize: 14, color: B3.midGray }}>Inget överskott med nuvarande indata</div>
+                      <div style={{ fontSize: 12, color: B3.midGray, marginTop: 4 }}>Öka ramintäkt eller sänk kostnader</div>
+                    </div>
+                  )}
+
+                  <button onClick={() => setVariant(1)} style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: 11, color: B3.midGray, textAlign: "right", padding: "4px 0",
+                  }}>← Visa variant A</button>
+                </div>
+              )}
             </div>
           </section>
 
